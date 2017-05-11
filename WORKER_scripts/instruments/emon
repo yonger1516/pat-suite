@@ -1,0 +1,26 @@
+#!/bin/bash
+OUTDIR=$1
+SAMPLING_INTERVAL=$2
+CMD=$3
+
+function run()
+{
+	source /root/emon/sep_vars.sh
+	emon -v > $OUTDIR/emon-v.dat
+	emon -M > $OUTDIR/emon-M.dat
+	#emon -i /root/emon/hsw-ep-events.txt > $OUTDIR/emon.dat &
+	emon -i /root/emon/bdx-ep-events.txt > $OUTDIR/emon.dat &
+}
+
+function stop()
+{
+	source ~/emon/sep_vars.sh
+	emon -stop &
+}
+
+
+
+case $CMD in
+        "run") run ;;
+        "post-process") ;;
+esac

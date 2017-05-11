@@ -1,0 +1,15 @@
+#!/bin/bash
+OUTDIR=$1
+SAMPLING_INTERVAL=$2
+CMD=$3
+
+function run()
+{
+	/usr/bin/mpstat -P ALL $SAMPLING_INTERVAL > $OUTDIR/mp.dat & 
+}
+
+
+case $CMD in
+        "run") run ;;
+        "post-process") ;;
+esac

@@ -1,0 +1,41 @@
+#!/bin/bash
+OUTDIR=$1
+SAMPLING_INTERVAL=$2
+CMD=$3
+
+function run()
+{
+	:
+}
+
+# create a snapshot of the system configurations
+function snapshot()
+{
+	mkdir -p $OUTDIR/sysconfig
+	sysctl -a >$OUTDIR/sysconfig/sysctl-a
+	uname -a >$OUTDIR/sysconfig/uname-a
+	hostname >$OUTDIR/sysconfig/hostname
+	cat /proc/cpuinfo >$OUTDIR/sysconfig/cpuinfo
+	cat /proc/meminfo >$OUTDIR/sysconfig/meminfo
+	cat /proc/partitions >$OUTDIR/sysconfig/partitions
+	ip link >$OUTDIR/sysconfig/ip-link
+	ip addr >$OUTDIR/sysconfig/ip-addr
+	df -h >$OUTDIR/sysconfig/df-h
+	mount >$OUTDIR/sysconfig/mount
+	lsmod >$OUTDIR/sysconfig/lsmod
+	ps -ef --forest >$OUTDIR/sysconfig/ps
+	service --status-all >$OUTDIR/sysconfig/services--status-all
+	chkconfig >$OUTDIR/sysconfig/chkconfig
+	#docker ps >$OUTDIR/sysconfig/docker-ps
+	#ovs-vsctl show >$OUTDIR/sysconfig/ovs-vsctl-show
+	iptables --list >$OUTDIR/sysconfig/iptables--list
+	route >$OUTDIR/sysconfig/route
+	mkdir -p $OUTDIR/sysconfig/etc-hadoop-conf
+	cp -r /etc/hadoop/conf/* $OUTDIR/sysconfig/etc-hadoop-conf
+        tar -czf $OUTDIR/sysconfig/cm_config.tgz /var/run/cloudera-scm-agent/process
+}
+
+case $CMD in
+        "run") run ;;
+        "post-process") snapshot ;;
+esac

@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# This script is used to run TeraSort workload from the ResourceManager node of a YARN cluster, either physical or virtual.
+# This script should have no dependency on anything other than the Haddop environment.
+
+#INPUT_HDFS=Terasort/Input-1TB
+#OUTPUT_HDFS=Terasort/Output
+INPUT_HDFS=HiBench/Terasort/Input
+OUTPUT_HDFS=HiBench/Terasort/Output
+
+export JAVA_HOME=/usr/java/jdk1.7.0_67-cloudera/
+export HADOOP_HOME=/opt/cloudera/parcels/CDH/lib/hadoop
+export HADOOP_EXECUTABLE=$HADOOP_HOME/bin/hadoop
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop/
+export MAPRED_EXECUTABLE=/opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/bin/mapred
+export HADOOP_EXAMPLES_JAR=/opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-examples.jar
+
+PARAMS=""
+PARAMS="$PARAMS -Dmapreduce.map.output.compress=true"
+PARAMS="$PARAMS -Dmapreduce.map.output.compress.codec="
+PARAMS="$PARAMS -Dmapreduce.reduce.shuffle.parallelcopies=30"
+PARAMS="$PARAMS -Dmapreduce.input.fileinputformat.split.maxsize=1073741824"
+#PARAMS="$PARAMS -Dmapreduce.input.fileinputformat.split.minsize=536870912"
+PARAMS="$PARAMS -Dmapreduce.map.memory.mb=2048"
+PARAMS="$PARAMS -Dmapreduce.map.java.opts=-Xmx1638m"
+#PARAMS="$PARAMS -Dmapreduce.map.java.opts='-Xmx1638m -agentpath:/tmp/libperfmap.so'"
+PARAMS="$PARAMS -Dmapreduce.task.io.sort.mb=768"
+PARAMS="$PARAMS -Dmapreduce.task.io.sort.factor=100"
+PARAMS="$PARAMS -Dmapreduce.map.sort.spill.percent=0.99"
+PARAMS="$PARAMS -Dmapreduce.reduce.memory.mb=2048"
+PARAMS="$PARAMS -Dmapreduce.reduce.java.opts=-Xmx1638m"
+#PARAMS="$PARAMS -Dmapreduce.reduce.java.opts=-Xmx1638m -agentpath:/tmp/libperfmap.so\""
+PARAMS="$PARAMS -Dyarn.app.mapreduce.am.resource.mb=2048"
+PARAMS="$PARAMS -Dyarn.app.mapreduce.am.command-opts=-Xmx1638m"
+PARAMS="$PARAMS -Dmapreduce.job.reduce.slowstart.completedmaps=0.90"
+PARAMS="$PARAMS -Dmapreduce.reduce.shuffle.merge.percent=0.80"
+PARAMS="$PARAMS -Dmapred.map.tasks.speculative.execution=false"
+PARAMS="$PARAMS -Dmapred.reduce.tasks.speculative.execution=false"
+#PARAMS="$PARAMS -Dmapreduce.job.reduces=580"
+PARAMS="$PARAMS -Dmapreduce.job.reduces=234"
+
+echo [`date +"%Y-%m-%d %T"`] ==================== TeraSort ======================
+#echo [`date +"%Y-%m-%d %T"`] RUNID=$runid
+echo [`date +"%Y-%m-%d %T"`] Input directory: $INPUT_HDFS 
+SIZE=`$HADOOP_EXECUTABLE fs -du -s $INPUT_HDFS |awk '{print $1}'`
+echo [`date +"%Y-%m-%d %T"`] Input data size: $SIZE bytes.
+echo [`date +"%Y-%m-%d %T"`] Output directory: $OUTPUT_HDFS
+echo [`date +"%Y-%m-%d %T"`] Removing any existing output data...
+$HADOOP_EXECUTABLE fs -rm -r -skipTrash $OUTPUT_HDFS >/dev/null 2>&1
+
+echo [`date +"%Y-%m-%d %T"`] Starting TeraSort...
+
+START=$(date +%s)
+set -x
+$HADOOP_EXECUTABLE jar $HADOOP_EXAMPLES_JAR terasort $PARAMS $INPUT_HDFS $OUTPUT_HDFS
+set +x
+END=$(date +%s)
+DURATION=$((END-START))
+
+echo [`date +"%Y-%m-%d %T"`] Run completed. 
+echo DataSize = $SIZE bytes
+echo SortTime = $DURATION seconds
+echo Throughput = `echo "scale=2; $SIZE / $DURATION / 1024 / 1024"|bc` MB/sec
+echo [`date +"%Y-%m-%d %T"`] ==================== TeraSort ======================
